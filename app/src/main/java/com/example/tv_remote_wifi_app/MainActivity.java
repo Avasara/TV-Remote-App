@@ -33,13 +33,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
                 Log.d(TAG, "We made new discoveries!");
-
             }
 
             @Override
             public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
                 Log.d(TAG, "A device went Dark!");
-
             }
 
             @Override
