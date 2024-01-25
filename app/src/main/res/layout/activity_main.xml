@@ -9,12 +9,13 @@
 
 
     <ListView
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
         android:id="@+id/listViewDevices"
         android:layout_width="408dp"
-        a
         android:layout_height="484dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="247dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
         tools:layout_editor_absoluteX="2dp"
         tools:layout_editor_absoluteY="244dp" />
 
