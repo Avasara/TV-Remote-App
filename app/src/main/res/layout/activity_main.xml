@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -12,11 +12,10 @@
         android:id="@+id/devicesListView"
         android:layout_width="408dp"
         android:layout_height="400dp"
-        android:layout_alignParentBottom="true"
+        android:layout_marginTop="200dp"
         android:layout_marginBottom="247dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        tools:layout_editor_absoluteX="2dp"
+        android:visibility="visible"
+        tools:layout_editor_absoluteX="dp"
         tools:layout_editor_absoluteY="244dp" />
 
-</RelativeLayout>
+</LinearLayout>
