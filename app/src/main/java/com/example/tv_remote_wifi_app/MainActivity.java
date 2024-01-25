@@ -22,31 +22,13 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize DiscoveryManager
+        //Initializing Discovery Manager
         DiscoveryManager.init(getApplicationContext());
-        DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
-        discoveryManager.start();
 
-        discoveryManager.addListener(new DiscoveryManagerListener() {
-            @Override
-            public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
-                Log.d(TAG, "We found a Device!");
-            }
+        nDiscoveryManager = DiscoveryManager.getInstance();
+        nDiscoveryManager.start();
 
-            @Override
-            public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
-                Log.d(TAG, "We made new discoveries!");
-            }
 
-            @Override
-            public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
-                Log.d(TAG, "A device went Dark!");
-            }
 
-            @Override
-            public void onDiscoveryFailed(DiscoveryManager manager, ServiceCommandError error) {
-                Log.d(TAG, "We found no devices!");
-            }
-        });
     }
 }
