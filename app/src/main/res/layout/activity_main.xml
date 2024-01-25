@@ -9,9 +9,9 @@
 
 
     <ListView
-        android:id="@+id/listViewDevices"
+        android:id="@+id/devicesListView"
         android:layout_width="408dp"
-        android:layout_height="484dp"
+        android:layout_height="400dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="247dp"
         app:layout_constraintBottom_toBottomOf="parent"
