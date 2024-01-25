@@ -29,13 +29,11 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
         nDiscoveryManager = DiscoveryManager.getInstance();
         nDiscoveryManager.start();
 
-        private void showImage() {
-            DevicePicker devicePicker = new DevicePicker(this);
-            AlertDialog dialog = devicePicker.getPickerDialog("Show Image", selectDevice);
-            dialog.show();
-        }
+    }
 
-
-
+    private void showImage() {
+        DevicePicker devicePicker = new DevicePicker(this);
+        AlertDialog dialog = devicePicker.getPickerDialog("Show Image", selectDevice);
+        dialog.show();
     }
 }
