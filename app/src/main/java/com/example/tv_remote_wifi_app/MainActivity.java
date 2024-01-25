@@ -2,13 +2,14 @@ package com.example.tv_remote_wifi_app;
 
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.connectsdk.device.ConnectableDeviceListener;
+import com.connectsdk.device.DevicePicker;
 import com.connectsdk.discovery.DiscoveryManager;
-import com.connectsdk.discovery.DiscoveryManagerListener;
-import com.connectsdk.service.command.ServiceCommandError;
 import com.connectsdk.device.ConnectableDevice;
 
 public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
@@ -27,6 +28,12 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
 
         nDiscoveryManager = DiscoveryManager.getInstance();
         nDiscoveryManager.start();
+
+        private void showImage() {
+            DevicePicker devicePicker = new DevicePicker(this);
+            AlertDialog dialog = devicePicker.getPickerDialog("Show Image", selectDevice);
+            dialog.show();
+        }
 
 
 
