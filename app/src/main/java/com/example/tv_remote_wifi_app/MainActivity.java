@@ -2,8 +2,12 @@ package com.example.tv_remote_wifi_app;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Adapter;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -18,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
+
+    private DiscoveryManager discoveryManager;
+    private ConnectableDevice device;
+    private ConnectableDeviceListener deviceListener;
 
     public ListView devicesListView;
     private ArrayList<String> devicesNameList;
@@ -40,57 +48,32 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
         devicesNameList = new ArrayList<>();
         devicesIDList = new ArrayList<>();
 
-        //Adapter will dynamically update itself using the specified layout, the ID of the layout and the array.
-        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.listItemLayout, devicesNameList);
-        devicesListView.setAdapter(devicesAdapter);
-
-        //Initializing Discovery Manager and setting up the listener to begin the discovery process
-        DiscoveryManager.init(this);
-        DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
-        DevicePicker devicePicker = new DevicePicker(this);
-
+        //Initializing Discovery Manager to begin discovery
+        DiscoveryManager.init(getApplicationContext());
+        discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.start();
 
-        devicePicker.getListView();
+        AdapterView.OnItemClickListener selectDevice = new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                device = (ConnectableDevice) adapterView.getItemAtPosition(position);
+                device.addListener(deviceListener);
+                device.connect();
+            }
+        };
+
+        showOptions(selectDevice);
     }
 
-    @Override
-    public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
-        Log.d("Discovery", "Device found: " + device.getFriendlyName());
-        String deviceId = device.getId();
-
-        //To prevents addition of the the same device twice.
-        if(devicesIDList.contains(deviceId)) {
-            Log.d("Duplicate","This is a duplicate device");
-        }
-        else {
-            devicesAdapter.add(device.getFriendlyName());
-            devicesAdapter.notifyDataSetChanged();
-        }
-    }
-
-    @Override
-    public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
-        Log.d("Update:", "Something has changed");
-    }
-
-    //Adapter will remove the device from the arraylist in the case it goes dark
-    @Override
-    public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
-        Log.d("Disconnection.", "Device removed: " + device.getFriendlyName());
-        devicesNameList.remove(device.getFriendlyName());
-        devicesAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void onDiscoveryFailed(DiscoveryManager manager, ServiceCommandError error) {
-        // Handle discovery failure
-        Log.e("Error", "Hmm, an error has occurred somewhere");
+    void showOptions(AdapterView.OnItemClickListener listener) {
+        DevicePicker devicePicker = new DevicePicker(this);
+        AlertDialog dialog = devicePicker.getPickerDialog("Show Options", listener);
+        dialog.show();
     }
 
     @Override
     public void onDeviceReady(ConnectableDevice device) {
-        
+
     }
 
     @Override
