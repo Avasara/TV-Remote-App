@@ -7,7 +7,6 @@
     android:background="@color/myprimary"
     tools:context=".MainActivity">
 
-
     <ListView
         android:id="@+id/devicesListView"
         android:layout_width="408dp"

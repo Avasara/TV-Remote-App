@@ -7,14 +7,17 @@ import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.connectsdk.device.ConnectableDeviceListener;
+import com.connectsdk.device.DevicePicker;
 import com.connectsdk.discovery.DiscoveryManager;
-import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
+import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
+public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
 
     public ListView devicesListView;
     private ArrayList<String> devicesNameList;
@@ -44,17 +47,20 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //Initializing Discovery Manager and setting up the listener to begin the discovery process
         DiscoveryManager.init(this);
         DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
-        discoveryManager.addListener(this);
+        DevicePicker devicePicker = new DevicePicker(this);
+
         discoveryManager.start();
+
+        devicePicker.getListView();
     }
 
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Discovery", "Device found: " + device.getFriendlyName());
-        String smartDeviceID = device.getId();
+        String deviceId = device.getId();
 
         //To prevents addition of the the same device twice.
-        if(devicesIDList.contains(smartDeviceID)) {
+        if(devicesIDList.contains(deviceId)) {
             Log.d("Duplicate","This is a duplicate device");
         }
         else {
@@ -80,5 +86,30 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     public void onDiscoveryFailed(DiscoveryManager manager, ServiceCommandError error) {
         // Handle discovery failure
         Log.e("Error", "Hmm, an error has occurred somewhere");
+    }
+
+    @Override
+    public void onDeviceReady(ConnectableDevice device) {
+        
+    }
+
+    @Override
+    public void onDeviceDisconnected(ConnectableDevice device) {
+
+    }
+
+    @Override
+    public void onPairingRequired(ConnectableDevice device, DeviceService service, DeviceService.PairingType pairingType) {
+
+    }
+
+    @Override
+    public void onCapabilityUpdated(ConnectableDevice device, List<String> added, List<String> removed) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectableDevice device, ServiceCommandError error) {
+
     }
 }
