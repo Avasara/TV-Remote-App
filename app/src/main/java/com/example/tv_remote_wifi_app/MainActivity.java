@@ -19,7 +19,9 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
 
-    private ConnectableDeviceListener deviceListener;
+    ConnectableDeviceListener deviceListener;
+    DevicePicker devicePicker = new DevicePicker(this);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +33,11 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
         DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.start();
 
+        //Initializing deviceListener
+        ConnectableDevice deviceListener = new ConnectableDevice() {
+
+        };
+
         showOptions(selectDevice);
 
     }
@@ -40,13 +47,14 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             ConnectableDevice smartDevice = (ConnectableDevice) adapterView.getItemAtPosition(position);
             smartDevice.addListener(deviceListener);
+            devicePicker.pickDevice(smartDevice);
             smartDevice.connect();
+            Log.d("Picked", "The device:" + smartDevice.getFriendlyName() + " was successfully picked.");
         }
     };
 
 
     void showOptions(AdapterView.OnItemClickListener listener) {
-        DevicePicker devicePicker = new DevicePicker(this);
         AlertDialog dialog = devicePicker.getPickerDialog("Show Options", listener);
         dialog.show();
     }
