@@ -4,12 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.Adapter;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 
 import com.connectsdk.device.ConnectableDeviceListener;
 import com.connectsdk.device.DevicePicker;
@@ -18,7 +14,6 @@ import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
@@ -27,26 +22,10 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
     private ConnectableDevice device;
     private ConnectableDeviceListener deviceListener;
 
-    public ListView devicesListView;
-    private ArrayList<String> devicesNameList;
-    private ArrayAdapter<String> devicesAdapter;
-
-    //Using devices unique ID to ensure we aren't adding duplicates.
-    //Also suppressing the Queried but never updated warning. Cause why not ;)
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    private ArrayList<String> devicesIDList;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //This is what the user will see when a device is discovered.
-        devicesListView = findViewById(R.id.devicesListView);
-
-        //The arrays that will hold the names of the discovered devices and their IDs.
-        devicesNameList = new ArrayList<>();
-        devicesIDList = new ArrayList<>();
 
         //Initializing Discovery Manager to begin discovery
         DiscoveryManager.init(getApplicationContext());
