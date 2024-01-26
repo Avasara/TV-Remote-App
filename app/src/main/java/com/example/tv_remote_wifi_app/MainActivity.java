@@ -19,18 +19,26 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     private ListView devicesListView;
     private ArrayList<String> devicesNameList;
     private ArrayAdapter<String> devicesAdapter;
-    private static final String TAG = "MyActivity";
+
+    //Using devices unique ID to ensure we aren't adding duplicates.
+    private ArrayList<Integer> devicesIDList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //This is what the user will see when a device is discovered.
         devicesListView = findViewById(R.id.devicesListView);
+
+        //The array that will hold the names of the discovered devices.
         devicesNameList = new ArrayList<>();
-        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.textViewItem, devicesNameList);
+
+        //Adapter will dynamically update itself using the specified layout, the ID of the layout and the array.
+        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.listItemLayout, devicesNameList);
         devicesListView.setAdapter(devicesAdapter);
 
+        //Initializing Discovery Manager and setting up the listener to begin the discovery process
         DiscoveryManager.init(this);
         DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.addListener(this);
@@ -40,23 +48,24 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Discovery", "Device found: " + device.getFriendlyName());
-        String smartDevice = device.getFriendlyName();
+        String smartDeviceID = device.getId();
 
-        //For every discovered service, it adds the same device to the Arraylist. This prevents that.
-        if(devicesNameList.contains(smartDevice)) {
+        //To prevents addition of the the same device twice.
+        if(devicesIDList.contains(smartDeviceID)) {
             Log.d("Duplicate","This is a duplicate device");
         }
         else {
-            devicesAdapter.add(smartDevice);
+            devicesAdapter.add(device.getFriendlyName());
             devicesAdapter.notifyDataSetChanged();
         }
     }
 
     @Override
     public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
-        Log.d("New:", "A device was updated");
+        Log.d("Update:", "Something has changed");
     }
 
+    //Adapter will remove the device from the arraylist in the case it goes dark
     @Override
     public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Disconnection.", "Device removed: " + device.getFriendlyName());
@@ -67,6 +76,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     @Override
     public void onDiscoveryFailed(DiscoveryManager manager, ServiceCommandError error) {
         // Handle discovery failure
-        Log.e(TAG, "Hmm, an error has occurred somewhere");
+        Log.e("Error", "Hmm, an error has occurred somewhere");
     }
 }
