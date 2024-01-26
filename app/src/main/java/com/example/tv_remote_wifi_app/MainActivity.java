@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 
@@ -18,8 +19,6 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
 
-    private DiscoveryManager discoveryManager;
-    private ConnectableDevice device;
     private ConnectableDeviceListener deviceListener;
 
     @Override
@@ -29,20 +28,22 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
 
         //Initializing Discovery Manager to begin discovery
         DiscoveryManager.init(getApplicationContext());
-        discoveryManager = DiscoveryManager.getInstance();
+        DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.start();
 
-        AdapterView.OnItemClickListener selectDevice = new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                device = (ConnectableDevice) adapterView.getItemAtPosition(position);
-                device.addListener(deviceListener);
-                device.connect();
-            }
-        };
-
         showOptions(selectDevice);
+
     }
+
+    AdapterView.OnItemClickListener selectDevice = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+            ConnectableDevice smartDevice = (ConnectableDevice) adapterView.getItemAtPosition(position);
+            smartDevice.addListener(deviceListener);
+            smartDevice.connect();
+        }
+    };
+
 
     void showOptions(AdapterView.OnItemClickListener listener) {
         DevicePicker devicePicker = new DevicePicker(this);
@@ -52,26 +53,26 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
 
     @Override
     public void onDeviceReady(ConnectableDevice device) {
-
+        Log.d("Device Ready", "A device is ready to be connected to");
     }
 
     @Override
     public void onDeviceDisconnected(ConnectableDevice device) {
-
+        Log.d("Disconnected", "A device was disconnected");
     }
 
     @Override
     public void onPairingRequired(ConnectableDevice device, DeviceService service, DeviceService.PairingType pairingType) {
-
+        Log.d("Pairing Required", "Pairing is required to interact with this device");
     }
 
     @Override
     public void onCapabilityUpdated(ConnectableDevice device, List<String> added, List<String> removed) {
-
+        Log.d("Update", "A devices capability was updated");
     }
 
     @Override
     public void onConnectionFailed(ConnectableDevice device, ServiceCommandError error) {
-
+        Log.d("Connection Failed", "The connection to the TV failed");
     }
 }
