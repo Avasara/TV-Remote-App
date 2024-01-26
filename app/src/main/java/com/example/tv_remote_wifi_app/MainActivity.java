@@ -15,10 +15,13 @@ import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
 
+    ConnectableDevice smartDevice;
     ConnectableDeviceListener deviceListener;
     DevicePicker devicePicker = new DevicePicker(this);
 
@@ -45,14 +48,28 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
     AdapterView.OnItemClickListener selectDevice = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-            ConnectableDevice smartDevice = (ConnectableDevice) adapterView.getItemAtPosition(position);
+            smartDevice = (ConnectableDevice) adapterView.getItemAtPosition(position);
             smartDevice.addListener(deviceListener);
             devicePicker.pickDevice(smartDevice);
-            smartDevice.connect();
-            Log.d("Picked", "The device:" + smartDevice.getFriendlyName() + " was successfully picked.");
+            Log.d("Picked ife", "The device:" + smartDevice.getFriendlyName() + " was successfully picked.");
+
+            if(smartDevice.isConnectable()) {
+                Log.d("SmartDevice Connectable ife", "The device" + smartDevice.getFriendlyName() + " is connectable!");
+                smartDevice.connect();
+                if(smartDevice.isConnected()) {
+                    Log.d("Successful Connection ife", "Successfully connected to" + smartDevice.getFriendlyName());
+                }
+                else {
+                    Log.d("UnSuccessful Connection ife", "Unsuccessfully boys, we'll get em next time");
+
+                }
+            }
+            else {
+                Log.d("SmartDevice ife unconnectable", "The device is not connectable");
+            }
+
         }
     };
-
 
     void showOptions(AdapterView.OnItemClickListener listener) {
         AlertDialog dialog = devicePicker.getPickerDialog("Show Options", listener);
@@ -61,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
 
     @Override
     public void onDeviceReady(ConnectableDevice device) {
-        Log.d("Device Ready", "A device is ready to be connected to");
+        Log.d("Device ife Ready", "A device is ready to be connected to");
     }
 
     @Override
