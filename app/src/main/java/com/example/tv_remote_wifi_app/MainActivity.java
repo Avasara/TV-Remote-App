@@ -51,21 +51,20 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
             smartDevice = (ConnectableDevice) adapterView.getItemAtPosition(position);
             smartDevice.addListener(deviceListener);
             devicePicker.pickDevice(smartDevice);
-            Log.d("Picked ife", "The device:" + smartDevice.getFriendlyName() + " was successfully picked.");
+            Log.d("Picked", "The device:" + smartDevice.getFriendlyName() + " was successfully picked.");
 
             if(smartDevice.isConnectable()) {
-                Log.d("SmartDevice Connectable ife", "The device" + smartDevice.getFriendlyName() + " is connectable!");
+                Log.d("SmartDevice Connectable", "The device" + smartDevice.getFriendlyName() + " is connectable!");
                 smartDevice.connect();
                 if(smartDevice.isConnected()) {
-                    Log.d("Successful Connection ife", "Successfully connected to" + smartDevice.getFriendlyName());
+                    Log.d("Successful Connection", "Successfully connected to" + smartDevice.getFriendlyName());
                 }
                 else {
-                    Log.d("UnSuccessful Connection ife", "Unsuccessfully boys, we'll get em next time");
-
+                    Log.d("UnSuccessful Connection", "Unsuccessfully boys, we'll get em next time");
                 }
             }
             else {
-                Log.d("SmartDevice ife unconnectable", "The device is not connectable");
+                Log.d("SmartDevice unconnectable", "The device is not connectable");
             }
 
         }
@@ -78,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
 
     @Override
     public void onDeviceReady(ConnectableDevice device) {
-        Log.d("Device ife Ready", "A device is ready to be connected to");
+        Log.d("Device Ready", "A device is ready to be connected to");
     }
 
     @Override
