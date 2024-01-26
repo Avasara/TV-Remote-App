@@ -16,12 +16,14 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
-    private ListView devicesListView;
+    public ListView devicesListView;
     private ArrayList<String> devicesNameList;
     private ArrayAdapter<String> devicesAdapter;
 
     //Using devices unique ID to ensure we aren't adding duplicates.
-    private ArrayList<Integer> devicesIDList;
+    //Also suppressing the Queried but never updated warning. Cause why not ;)
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+    private ArrayList<String> devicesIDList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +33,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //This is what the user will see when a device is discovered.
         devicesListView = findViewById(R.id.devicesListView);
 
-        //The array that will hold the names of the discovered devices.
+        //The arrays that will hold the names of the discovered devices and their IDs.
         devicesNameList = new ArrayList<>();
+        devicesIDList = new ArrayList<>();
 
         //Adapter will dynamically update itself using the specified layout, the ID of the layout and the array.
         devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.listItemLayout, devicesNameList);
