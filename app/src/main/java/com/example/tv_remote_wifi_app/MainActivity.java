@@ -55,16 +55,8 @@ public class MainActivity extends AppCompatActivity implements ConnectableDevice
 
             if(smartDevice.isConnectable()) {
                 Log.d("SmartDevice Connectable", "The device" + smartDevice.getFriendlyName() + " is connectable!");
-                smartDevice.connect();
-                if(smartDevice.isConnected()) {
-                    Log.d("Successful Connection", "Successfully connected to" + smartDevice.getFriendlyName());
-                }
-                else {
-                    Log.d("UnSuccessful Connection", "Unsuccessfully boys, we'll get em next time");
-                }
-            }
-            else {
-                Log.d("SmartDevice unconnectable", "The device is not connectable");
+                //Code for connecting to the device goes here.
+
             }
 
         }
