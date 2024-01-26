@@ -17,7 +17,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
     private ListView devicesListView;
-    private ArrayList<String> deviceNames;
+    private ArrayList<String> devicesNameList;
     private ArrayAdapter<String> devicesAdapter;
     private static final String TAG = "MyActivity";
 
@@ -27,8 +27,8 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         setContentView(R.layout.activity_main);
 
         devicesListView = findViewById(R.id.devicesListView);
-        deviceNames = new ArrayList<>();
-        devicesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNames);
+        devicesNameList = new ArrayList<>();
+        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.textViewItem, devicesNameList);
         devicesListView.setAdapter(devicesAdapter);
 
         DiscoveryManager.init(this);
@@ -40,8 +40,16 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Discovery", "Device found: " + device.getFriendlyName());
-        deviceNames.add(device.getFriendlyName());
-        devicesAdapter.notifyDataSetChanged();
+        String smartDevice = device.getFriendlyName();
+
+        //For every discovered service, it adds the same device to the Arraylist. This prevents that.
+        if(devicesNameList.contains(smartDevice)) {
+            Log.d("Duplicate","This is a duplicate device");
+        }
+        else {
+            devicesAdapter.add(smartDevice);
+            devicesAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -52,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     @Override
     public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Disconnection.", "Device removed: " + device.getFriendlyName());
-        deviceNames.remove(device.getFriendlyName());
+        devicesNameList.remove(device.getFriendlyName());
         devicesAdapter.notifyDataSetChanged();
     }
 
