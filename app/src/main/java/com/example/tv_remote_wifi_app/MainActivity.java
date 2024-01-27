@@ -10,11 +10,9 @@ import android.widget.ListView;
 import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
-import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
@@ -23,7 +21,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     private ArrayAdapter<String> devicesAdapter;
 
     //Using devices unique ID to ensure we aren't adding duplicates.
-    private ArrayList<String> devicesIPList;
+    private ArrayList<String> devicesList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,9 +31,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //This is what the user will see when a device is discovered.
         devicesListView = findViewById(R.id.devicesListView);
 
-        //The array that will hold the names of the discovered devices name and ID.
+        //The array that will hold the deviceKey for discovered devices and their names that'll be displayed to the user.
         devicesNameList = new ArrayList<>();
-        devicesIPList = new ArrayList<>();
+        devicesList = new ArrayList<>();
 
         //Adapter will dynamically update itself using the specified layout, the ID of the layout and the array.
         devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.listItemLayout, devicesNameList);
@@ -50,20 +48,24 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
-        String deviceService = device.getServiceId();
+        //Composite key used to prevent different services showing up as different devices.
+        String deviceKey = device.getIpAddress() + '-' + device.getFriendlyName();
+
+        //To check and make sure that every devicekey added to devicesList is unique.
         try{
-            if(devicesIPList.contains(device.getIpAddress())) {
-                Log.d("IP Exists", "A device with this IP already exists");
+            if(devicesList.contains(deviceKey)) {
+                Log.d("Device-Exists", "A device with this key already exists. IGNORING");
             }
             else {
-                devicesIPList.add(device.getIpAddress());
+                devicesList.add(deviceKey);
+                devicesNameList.add(device.getFriendlyName());
                 devicesAdapter.notifyDataSetChanged();
-                Log.d("New Addition", "A new device was added to the list.");
+                Log.d("Device-Added", "A new device was added to the list." + deviceKey);
             }
         }
 
         catch (Exception exception) {
-
+            Log.wtf("WhaT?!", "This was working just yesterday!");
         }
     }
 
@@ -76,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Disconnection.", "Device removed: " + device.getFriendlyName());
         devicesNameList.remove(device.getFriendlyName());
+        devicesList.remove(device.getIpAddress());
         devicesAdapter.notifyDataSetChanged();
     }
 
