@@ -2,93 +2,86 @@ package com.example.tv_remote_wifi_app;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
-import com.connectsdk.device.ConnectableDeviceListener;
-import com.connectsdk.device.DevicePicker;
 import com.connectsdk.discovery.DiscoveryManager;
+import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements ConnectableDeviceListener {
+public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
-    ConnectableDevice smartDevice;
-    ConnectableDeviceListener deviceListener;
-    DevicePicker devicePicker = new DevicePicker(this);
+    private ListView devicesListView;
+    private ArrayList<String> devicesNameList;
+    private ArrayAdapter<String> devicesAdapter;
 
+    //Using devices unique ID to ensure we aren't adding duplicates.
+    private ArrayList<String> devicesIPList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Initializing Discovery Manager to begin discovery
-        DiscoveryManager.init(getApplicationContext());
+        //This is what the user will see when a device is discovered.
+        devicesListView = findViewById(R.id.devicesListView);
+
+        //The array that will hold the names of the discovered devices name and ID.
+        devicesNameList = new ArrayList<>();
+        devicesIPList = new ArrayList<>();
+
+        //Adapter will dynamically update itself using the specified layout, the ID of the layout and the array.
+        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.listItemLayout, devicesNameList);
+        devicesListView.setAdapter(devicesAdapter);
+
+        //Initializing Discovery Manager and setting up the listener to begin the discovery process
+        DiscoveryManager.init(this);
         DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
+        discoveryManager.addListener(this);
         discoveryManager.start();
-
-        //Initializing deviceListener
-        ConnectableDevice deviceListener = new ConnectableDevice() {
-
-        };
-
-        showOptions(selectDevice);
-
     }
 
-    AdapterView.OnItemClickListener selectDevice = new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-            smartDevice = (ConnectableDevice) adapterView.getItemAtPosition(position);
-            smartDevice.addListener(deviceListener);
-            devicePicker.pickDevice(smartDevice);
-            Log.d("Picked", "The device:" + smartDevice.getFriendlyName() + " was successfully picked.");
-
-            if(smartDevice.isConnectable()) {
-                Log.d("SmartDevice Connectable", "The device" + smartDevice.getFriendlyName() + " is connectable!");
-                //Code for connecting to the device goes here.
-
+    @Override
+    public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
+        String deviceService = device.getServiceId();
+        try{
+            if(devicesIPList.contains(device.getIpAddress())) {
+                Log.d("IP Exists", "A device with this IP already exists");
             }
+            else {
+                devicesIPList.add(device.getIpAddress());
+                devicesAdapter.notifyDataSetChanged();
+                Log.d("New Addition", "A new device was added to the list.");
+            }
+        }
+
+        catch (Exception exception) {
 
         }
-    };
-
-    void showOptions(AdapterView.OnItemClickListener listener) {
-        AlertDialog dialog = devicePicker.getPickerDialog("Show Options", listener);
-        dialog.show();
     }
 
     @Override
-    public void onDeviceReady(ConnectableDevice device) {
-        Log.d("Device Ready", "A device is ready to be connected to");
+    public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
+        Log.d("Updated_Device:", "Something has changed");
     }
 
     @Override
-    public void onDeviceDisconnected(ConnectableDevice device) {
-        Log.d("Disconnected", "A device was disconnected");
+    public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
+        Log.d("Disconnection.", "Device removed: " + device.getFriendlyName());
+        devicesNameList.remove(device.getFriendlyName());
+        devicesAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void onPairingRequired(ConnectableDevice device, DeviceService service, DeviceService.PairingType pairingType) {
-        Log.d("Pairing Required", "Pairing is required to interact with this device");
-    }
-
-    @Override
-    public void onCapabilityUpdated(ConnectableDevice device, List<String> added, List<String> removed) {
-        Log.d("Update", "A devices capability was updated");
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectableDevice device, ServiceCommandError error) {
-        Log.d("Connection Failed", "The connection to the TV failed");
+    public void onDiscoveryFailed(DiscoveryManager manager, ServiceCommandError error) {
+        // Handle discovery failure
+        Log.e("Error", "Hmm, an error has occurred somewhere");
     }
 }

@@ -3,7 +3,7 @@
     android:id="@+id/listItemLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textColor="#F1EFEF"
+    android:textColor="#DDDEE3"
     android:padding="30dp"
     android:background="#2F3142"
     android:textSize="18sp"
