@@ -1,5 +1,6 @@
 package com.example.tv_remote_wifi_app;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
@@ -24,6 +25,8 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     //deviceList array holding deviceKeys to ensure we aren't adding duplicates.
     private ArrayList<String> devicesList;
 
+    public String selectedDevice;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
         //Adapter will display devices to the user using the specified layout, the ID of the layout and the deviceName Array.
         devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.listItemLayout, devicesNameList);
-        devicesListView.setAdapter(devicesAdapter);
+        //devicesListView.setAdapter(devicesAdapter);
 
         //Initializing Discovery Manager and setting up the listener to begin the discovery process
         DiscoveryManager.init(this);
@@ -51,6 +54,19 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     ConnectableDevice device = new ConnectableDevice();
     String deviceKey;
 
+    public void devOptions() {
+        //Alert dialog to show the users the list of devices
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select a Device");
+        builder.setAdapter(devicesAdapter, (dialog, which) -> {
+            //Handling device selection
+            String selectedDevice = devicesNameList.get(which);
+            Log.d("Selected-Device" , "The device selected is" + selectedDevice);
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
 
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
@@ -73,6 +89,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         catch (Exception exception) {
             Log.wtf("WhaT?!", "This was working just yesterday!");
         }
+
+        //Calling the method that displays the options to the user.
+        devOptions();
     }
 
     @Override
