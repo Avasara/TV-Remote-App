@@ -7,14 +7,4 @@
     android:background="@color/myprimary"
     tools:context=".MainActivity">
 
-    <ListView
-        android:id="@+id/devicesListView"
-        android:layout_width="408dp"
-        android:layout_height="400dp"
-        android:layout_marginTop="200dp"
-        android:layout_marginBottom="247dp"
-        android:visibility="visible"
-        tools:layout_editor_absoluteX="dp"
-        tools:layout_editor_absoluteY="244dp" />
-
 </LinearLayout>

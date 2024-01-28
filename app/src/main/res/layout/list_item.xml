@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/listItemLayout"
+    android:id="@+id/list_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:textColor="#DDDEE3"
     android:padding="30dp"
-    android:background="#2F3142"
+    android:background="#3F3F40"
     android:textSize="18sp"
     />
