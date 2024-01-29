@@ -2,23 +2,27 @@ package com.example.tv_remote_wifi_app;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.HasDefaultViewModelProviderFactory;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 
+import android.util.Pair;
 import android.view.ContextThemeWrapper;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 
-import com.amazon.whisperlink.service.Device;
+import com.connectsdk.core.AppInfo;
 import com.connectsdk.device.ConnectableDeviceListener;
+import com.connectsdk.discovery.CapabilityFilter;
 import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
+import com.connectsdk.service.DeviceService.PairingType;
 import com.connectsdk.service.capability.KeyControl;
-import com.connectsdk.service.capability.listeners.ResponseListener;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import java.util.ArrayList;
@@ -26,12 +30,16 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
+    public DiscoveryManager discoveryManager;
+
     private ArrayList<String> devicesNameList;
     private ArrayList<String> deviceKeyList;
+    private ArrayList<String> selectedDeviceList;
     private ArrayAdapter<String> devicesAdapter;
 
     //deviceList array holding deviceKeys to ensure we aren't adding duplicates.
     private ArrayList<ConnectableDevice> devicesList;
+
     private ConnectableDeviceListener deviceListener;
 
     @Override
@@ -43,64 +51,45 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         devicesNameList = new ArrayList<>();
         devicesList = new ArrayList<>();
         deviceKeyList = new ArrayList<>();
+        selectedDeviceList = new ArrayList<>();
+
+        //Adapter will display devices to the user using the specified layout, the ID of the layout and the deviceName Array.
+        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.list_item, devicesNameList);
+
+        CapabilityFilter keyControlFilter = new CapabilityFilter(
+                KeyControl.Any
+        );
+
+        //Initializing Discovery Manager and setting up the listener to begin the discovery process
+        DiscoveryManager.init(this);
+        discoveryManager = DiscoveryManager.getInstance();
+        discoveryManager.setPairingLevel(DiscoveryManager.PairingLevel.ON);
+        discoveryManager.addListener(this);
+        discoveryManager.start();
+
+
+        showOptions();
+        Log.d("Device-Pairing-Level", "The device pairing level is: " + discoveryManager.getPairingLevel());
+
 
         deviceListener = new ConnectableDeviceListener() {
             @Override
             public void onDeviceReady(ConnectableDevice device) {
-                Log.d("Device-Listener", "WE did it boysss");
+                pairingAlertDialog();
 
-                KeyControl keyControl = new KeyControl() {
+                final Button button = findViewById(R.id.home_button);
+                button.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public KeyControl getKeyControl() {
-                        Log.d("Device-KeyControl", "The device is capable of keycontrol");
-                        return getKeyControl();
+                    public void onClick(View v) {
+                        try {
+                            Log.d("Home-Clicked", "The button was clicked");
+                            sendHomeCommand(device);
+                        }
+                        catch (Exception exception) {
+                            Log.e("Home-Key-Error", "The key didn't go through");
+                        }
                     }
-
-                    @Override
-                    public CapabilityPriorityLevel getKeyControlCapabilityLevel() {
-                        return null;
-                    }
-
-                    @Override
-                    public void up(ResponseListener<Object> listener) {
-
-                    }
-
-                    @Override
-                    public void down(ResponseListener<Object> listener) {
-
-                    }
-
-                    @Override
-                    public void left(ResponseListener<Object> listener) {
-
-                    }
-
-                    @Override
-                    public void right(ResponseListener<Object> listener) {
-
-                    }
-
-                    @Override
-                    public void ok(ResponseListener<Object> listener) {
-
-                    }
-
-                    @Override
-                    public void back(ResponseListener<Object> listener) {
-
-                    }
-
-                    @Override
-                    public void home(ResponseListener<Object> listener) {
-                        
-                    }
-
-                    @Override
-                    public void sendKeyCode(KeyControl.KeyCode keycode, ResponseListener<Object> listener) {
-
-                    }
-                };
+                });
             }
 
             @Override
@@ -115,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
             @Override
             public void onCapabilityUpdated(ConnectableDevice device, List<String> added, List<String> removed) {
-                Log.d("Device-Listener", "The device listener detected a capabilities update in: " + device.getFriendlyName());
+                //Log.d("Device-Listener", "The device listener detected a capabilities update in: " + device.getFriendlyName());
             }
 
             @Override
@@ -124,27 +113,25 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             }
         };
 
-        //Adapter will display devices to the user using the specified layout, the ID of the layout and the deviceName Array.
-        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.list_item, devicesNameList);
 
-        //Initializing Discovery Manager and setting up the listener to begin the discovery process
-        DiscoveryManager.init(this);
-        DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
-        discoveryManager.addListener(this);
-        discoveryManager.start();
-
-
-        showOptions();
 
     }
 
+
+    void sendHomeCommand(ConnectableDevice device) {
+        Log.d("Device-sendHomeCommand", "Device keycontrol is: " + device.getCapabilities());
+    }
+
     void connectToDevice(String deviceSelected) {
+
+        pairingAlertDialog();
+
         //Attempting to connect to the device based on the name in the deviceSelected string.
         try {
             for (ConnectableDevice device : devicesList) {
                 if (device.getFriendlyName().equals(deviceSelected)) {
                     //If all goes well. It connects. If not, eh
-                    Log.d("Device-Connection", "Beginning connection to device: " + device.getFriendlyName());
+                    Log.d("Device-ConnectToDevice", "Beginning connection to device: " + device.getFriendlyName());
 
                     //Handler to delay the connection by 5 seconds. Giving ConnectSDK enough time to add in all the services.
                     Handler handler = new Handler();
@@ -153,6 +140,8 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                         public void run() {
                             try {
                                 Log.d("Device Log." , "The device is: " + device);
+                                device.setPairingType(PairingType.FIRST_SCREEN);
+                                device.setPairingType(DeviceService.PairingType.FIRST_SCREEN);
                                 device.addListener(deviceListener);
                                 device.connect();
                             }
@@ -160,9 +149,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                                 Log.e("Device-Failed-Connection", "The connection failed due to: " + exception.getMessage());
                             }
                         }
-                    }, 5000);
+                    }, 20000);
                 } else {
-                    Log.d("Device-Mismatch", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + deviceSelected);
+                    Log.d("Device-ConnectToDevice", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + deviceSelected);
                 }
             }
         }
@@ -176,9 +165,18 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, R.style.CustomAlertDialogTheme));
         builder.setTitle("Select a Device");
         builder.setCancelable(false);
+        builder.setPositiveButton("Refresh", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                discoveryManager.start();
+                builder.show();
+            };
+        });
+
         builder.setAdapter(devicesAdapter, (dialog, which) -> {
             //Handling device selection
             String selectedDevice = devicesNameList.get(which);
+            selectedDeviceList.add(selectedDevice);
             Log.d("Selected-Device" , "The device selected is" + selectedDevice);
             //Once a device is selected, the connectToDevice method is called on its name and it handles the rest.
             connectToDevice(selectedDevice);
@@ -188,19 +186,30 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         dialog.show();
 
     }
+
+    void pairingAlertDialog() {
+        AlertDialog.Builder pairingAlertDialog = new AlertDialog.Builder(this);
+        pairingAlertDialog.setTitle("Pairing with TV");
+        pairingAlertDialog.setMessage("Please confirm your selection on your TV");
+        pairingAlertDialog.setPositiveButton("Okay", null);
+        pairingAlertDialog.setNegativeButton("Nope", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+       pairingAlertDialog.show();
+    }
     String deviceKey;
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
         //deviceKey for preventing services posing as devices.
         //Yess, now it definitely looks more encryptedy :D
         deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
-        device.addListener(deviceListener);
 
         try {
             if (deviceKeyList.contains(deviceKey)) {
                 Log.d("Device-Exists", "A device with key " + deviceKey + " already exists. Adding service to Device");
-                //String deviceService = device.getServiceId();
-                //device.addService(deviceService);
             } else {
                 //If the deviceKey is not in the list, then all this happens.
                 devicesList.add(device);
