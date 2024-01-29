@@ -4,6 +4,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 import android.view.ContextThemeWrapper;
@@ -49,20 +50,35 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     }
 
     void connectToDevice(String deviceSelected) {
-        //Attempting to connect to devices based on both their names.
+        //Attempting to connect to the device based on the name in the deviceSelected string.
         try {
             for (ConnectableDevice device : devicesList) {
                 if (device.getFriendlyName().equals(deviceSelected)) {
-                    Log.d("Device-Connection", "Beginning connection to device");
-                    device.connect();
+                    //If all goes well. It connects. If not, eh
+                    Log.d("Device-Connection", "Beginning connection to device: " + device.getFriendlyName());
+
+                    //Handler to delay the connection by 5 seconds. Giving ConnectSDK enough time to add in all the services.
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                device.connect();
+                            }
+                            catch (Exception exception) {
+                                Log.e("Device-Failed-Connection", "The connection failed due to: " + exception.getMessage());
+                            }
+                        }
+                    }, 5000);
+
                     if(device.isConnected()) {
-                        Log.d("Device-Successful-Connection", "WE GOT EM LADS. WE FUCKING GOT EM");
+                        Log.d("Device-Successful-Connection", "WE GOT EM LADS. WE GOT EM");
                     }
                     else {
                         Log.d("Device-Failed-Connection","It's alright boys. we'll get em next time");
                     }
                 } else {
-                    Log.d("Device-Mismatch", "The selected device does not match up");
+                    Log.d("Device-Mismatch", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + deviceSelected);
                 }
             }
         }
@@ -80,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             //Handling device selection
             String selectedDevice = devicesNameList.get(which);
             Log.d("Selected-Device" , "The device selected is" + selectedDevice);
+            //Once a device is selected, the connectToDevice method is called on its name and it handles the rest.
             connectToDevice(selectedDevice);
         });
 
@@ -90,7 +107,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     String deviceKey;
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
-        deviceKey = device.getIpAddress() + "-" + device.getFriendlyName();
+        //deviceKey for preventing services posing as devices.
+        deviceKey = '-' + device.getFriendlyName() + '-' + device.getIpAddress() + '-';
+
         try {
             if (deviceKeyList.contains(deviceKey)) {
                 Log.d("Device-Exists", "A device with this name already exists. IGNORING");
