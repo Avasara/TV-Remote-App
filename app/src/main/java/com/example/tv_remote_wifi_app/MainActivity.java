@@ -2,6 +2,7 @@ package com.example.tv_remote_wifi_app;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.HasDefaultViewModelProviderFactory;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,12 +11,16 @@ import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.widget.ArrayAdapter;
 
+import com.amazon.whisperlink.service.Device;
+import com.connectsdk.device.ConnectableDeviceListener;
 import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
+import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
@@ -25,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     //deviceList array holding deviceKeys to ensure we aren't adding duplicates.
     private ArrayList<ConnectableDevice> devicesList;
+    private ConnectableDeviceListener deviceListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +42,33 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         devicesList = new ArrayList<>();
         deviceKeyList = new ArrayList<>();
 
+        deviceListener = new ConnectableDeviceListener() {
+            @Override
+            public void onDeviceReady(ConnectableDevice device) {
+                Log.d("Device-Listener", "WE did it boysss");
+            }
+
+            @Override
+            public void onDeviceDisconnected(ConnectableDevice device) {
+                Log.d("Device-Listener" , "We disconnected from the device");
+            }
+
+            @Override
+            public void onPairingRequired(ConnectableDevice device, DeviceService service, DeviceService.PairingType pairingType) {
+                Log.d("Device-Listener", "We need to pair with them.");
+            }
+
+            @Override
+            public void onCapabilityUpdated(ConnectableDevice device, List<String> added, List<String> removed) {
+                Log.d("Device-Listener", "The device listener detected a capabilities update in: " + device.getFriendlyName());
+            }
+
+            @Override
+            public void onConnectionFailed(ConnectableDevice device, ServiceCommandError error) {
+                Log.e("Device-Listener", "The connection to the device failed. I'm sorry");
+            }
+        };
+
         //Adapter will display devices to the user using the specified layout, the ID of the layout and the deviceName Array.
         devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.list_item, devicesNameList);
 
@@ -44,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         DiscoveryManager discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.addListener(this);
         discoveryManager.start();
+
 
         showOptions();
 
@@ -63,21 +97,23 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                         @Override
                         public void run() {
                             try {
+                                Log.d("Device Log." , "The device is: " + device);
+                                device.addListener(deviceListener);
                                 device.connect();
+
+                                //Check to see if we're connected to the device.
+                                if(device.isConnected()) {
+                                    Log.d("Device-Successful-Connection", "WE GOT EM LADS. WE GOT EM");
+                                }
+                                else {
+                                    Log.d("Device-Failed-Connection","It's alright boys. we'll get em next time");
+                                }
                             }
                             catch (Exception exception) {
                                 Log.e("Device-Failed-Connection", "The connection failed due to: " + exception.getMessage());
                             }
                         }
                     }, 5000);
-
-                    //Check to see if we're connected to the device.
-                    if(device.isConnected()) {
-                        Log.d("Device-Successful-Connection", "WE GOT EM LADS. WE GOT EM");
-                    }
-                    else {
-                        Log.d("Device-Failed-Connection","It's alright boys. we'll get em next time");
-                    }
                 } else {
                     Log.d("Device-Mismatch", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + deviceSelected);
                 }
@@ -111,10 +147,13 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //deviceKey for preventing services posing as devices.
         //Yess, now it definitely looks more encryptedy :D
         deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
+        device.addListener(deviceListener);
 
         try {
             if (deviceKeyList.contains(deviceKey)) {
-                Log.d("Device-Exists", "A device with key " + deviceKey + " already exists. IGNORING");
+                Log.d("Device-Exists", "A device with key " + deviceKey + " already exists. Adding service to Device");
+                //String deviceService = device.getServiceId();
+                //device.addService(deviceService);
             } else {
                 //If the deviceKey is not in the list, then all this happens.
                 devicesList.add(device);
