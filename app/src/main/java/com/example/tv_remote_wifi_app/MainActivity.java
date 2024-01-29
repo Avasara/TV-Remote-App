@@ -17,6 +17,8 @@ import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
+import com.connectsdk.service.capability.KeyControl;
+import com.connectsdk.service.capability.listeners.ResponseListener;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import java.util.ArrayList;
@@ -46,6 +48,59 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             @Override
             public void onDeviceReady(ConnectableDevice device) {
                 Log.d("Device-Listener", "WE did it boysss");
+
+                KeyControl keyControl = new KeyControl() {
+                    @Override
+                    public KeyControl getKeyControl() {
+                        Log.d("Device-KeyControl", "The device is capable of keycontrol");
+                        return getKeyControl();
+                    }
+
+                    @Override
+                    public CapabilityPriorityLevel getKeyControlCapabilityLevel() {
+                        return null;
+                    }
+
+                    @Override
+                    public void up(ResponseListener<Object> listener) {
+
+                    }
+
+                    @Override
+                    public void down(ResponseListener<Object> listener) {
+
+                    }
+
+                    @Override
+                    public void left(ResponseListener<Object> listener) {
+
+                    }
+
+                    @Override
+                    public void right(ResponseListener<Object> listener) {
+
+                    }
+
+                    @Override
+                    public void ok(ResponseListener<Object> listener) {
+
+                    }
+
+                    @Override
+                    public void back(ResponseListener<Object> listener) {
+
+                    }
+
+                    @Override
+                    public void home(ResponseListener<Object> listener) {
+                        
+                    }
+
+                    @Override
+                    public void sendKeyCode(KeyControl.KeyCode keycode, ResponseListener<Object> listener) {
+
+                    }
+                };
             }
 
             @Override
@@ -100,14 +155,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                                 Log.d("Device Log." , "The device is: " + device);
                                 device.addListener(deviceListener);
                                 device.connect();
-
-                                //Check to see if we're connected to the device.
-                                if(device.isConnected()) {
-                                    Log.d("Device-Successful-Connection", "WE GOT EM LADS. WE GOT EM");
-                                }
-                                else {
-                                    Log.d("Device-Failed-Connection","It's alright boys. we'll get em next time");
-                                }
                             }
                             catch (Exception exception) {
                                 Log.e("Device-Failed-Connection", "The connection failed due to: " + exception.getMessage());
