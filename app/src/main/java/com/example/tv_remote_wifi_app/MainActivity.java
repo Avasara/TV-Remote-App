@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                         }
                     }, 5000);
 
+                    //Check to see if we're connected to the device.
                     if(device.isConnected()) {
                         Log.d("Device-Successful-Connection", "WE GOT EM LADS. WE GOT EM");
                     }
@@ -108,11 +109,12 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
         //deviceKey for preventing services posing as devices.
-        deviceKey = '-' + device.getFriendlyName() + '-' + device.getIpAddress() + '-';
+        //Yess, now it definitely looks more encryptedy :D
+        deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
         try {
             if (deviceKeyList.contains(deviceKey)) {
-                Log.d("Device-Exists", "A device with this name already exists. IGNORING");
+                Log.d("Device-Exists", "A device with key " + deviceKey + " already exists. IGNORING");
             } else {
                 //If the deviceKey is not in the list, then all this happens.
                 devicesList.add(device);
@@ -130,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     @Override
     public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
         Log.d("Updated-Device:", "Device:" + device.getFriendlyName() + " has been updated");
+        devicesAdapter.notifyDataSetChanged();
     }
 
     @Override
