@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/list_item"
-    android:layout_width="match_parent"
+<RelativeLayout android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textColor="#DDDEE3"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@drawable/dialog_background">
+
+    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/list_item"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textColor="#0E0E0E"
     android:padding="30dp"
-    android:background="#3F3F40"
-    android:textSize="18sp"
-    />
+    android:textSize="17sp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:background="@color/black"/>
+</RelativeLayout>

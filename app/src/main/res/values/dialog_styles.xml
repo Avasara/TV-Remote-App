@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CustomAlertDialogTheme" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+
+        <item name="colorAccent">#141416</item>
+        <item name="android:colorBackground">@color/black</item>
+
+    </style>
+</resources>
