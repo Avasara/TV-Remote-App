@@ -18,7 +18,6 @@ import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
-import com.connectsdk.service.DeviceService.PairingType;
 import com.connectsdk.service.command.ServiceCommandError;
 
 import org.json.JSONObject;
@@ -29,29 +28,38 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
 
     public DiscoveryManager discoveryManager;
+
+    //Array holding device names that will be displayed to the user.
     private ArrayList<String> devicesNameList;
-    private ArrayList<String> deviceKeyList;
-    private ArrayList<String> selectedDeviceList;
-    private ArrayAdapter<String> devicesAdapter;
 
     //deviceList array holding deviceKeys to ensure we aren't adding duplicates.
     private ArrayList<ConnectableDevice> devicesList;
+
+    //Using deviceKey, it prevents the addition of duplicates.
+    private ArrayList<String> deviceKeyList;
+
+    //Making the selectedDevice available for all other methods that might have a need for it.
+    private ArrayList<String> selectedDeviceList;
+
+    //Adapter facilitates display of devices to the user using the specified layout the devicesNameList Array.
+    private ArrayAdapter<String> devicesAdapter;
     private ConnectableDeviceListener deviceListener;
+
+    //deviceKey for preventing services posing as devices.
+    private String deviceKey;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //The array that will hold the deviceKey for discovered devices and their names that'll be displayed to the user.
         devicesNameList = new ArrayList<>();
         devicesList = new ArrayList<>();
         deviceKeyList = new ArrayList<>();
         selectedDeviceList = new ArrayList<>();
 
-        //Adapter will display devices to the user using the specified layout, the ID of the layout and the deviceName Array.
         devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.list_item, devicesNameList);
 
-        //Initializing Discovery Manager and setting up the listener to begin the discovery process
+        //Initializing Discovery Manager and setup for Discovery
         DiscoveryManager.init(this);
         discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.setPairingLevel(DiscoveryManager.PairingLevel.ON);
@@ -59,11 +67,12 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         discoveryManager.addListener(MainActivity.this);
         DiscoveryManager.getInstance().start();
 
-        showOptions();
         Log.d("Device-Pairing-Level", "The device pairing level is: " + discoveryManager.getPairingLevel());
 
+        showOptions();
 
         deviceListener = new ConnectableDeviceListener() {
+            //The first test button. This is going to be where our home button will be executed.
             @Override
             public void onDeviceReady(ConnectableDevice device) {
                 final Button button = findViewById(R.id.home_button);
@@ -118,14 +127,13 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     }
 
     void connectToDevice(String deviceSelected) {
-        //Attempting to connect to the device based on the name in the deviceSelected string.
+        //Attempting connection based on the name in the deviceSelected string.
         try {
             for (ConnectableDevice device : devicesList) {
                 if (device.getFriendlyName().equals(deviceSelected)) {
-                    //If all goes well. It connects. If not, eh
                     Log.d("Device-ConnectToDevice", "Beginning connection to device: " + device.getFriendlyName());
 
-                    //Handler to delay the connection by 5 seconds. Giving ConnectSDK enough time to add in all the services.
+                    //Handler delaying the connection by 15 seconds. Giving ConnectSDK enough time to add in all the services.
                     Handler handler = new Handler();
                     handler.postDelayed(new Runnable() {
                         @Override
@@ -133,14 +141,13 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                             try {
                                 Log.d("Device-connectToDevice" , "The device is: " + device);
                                 device.addListener(deviceListener);
-                                device.setPairingType(PairingType.FIRST_SCREEN);
                                 device.connect();
                             }
                             catch (Exception exception) {
                                 Log.e("Device-connectToDevice-Error", "The connection failed due to: " + exception.getMessage());
                             }
                         }
-                    }, 20000);
+                    }, 15000);
                 } else {
                     Log.d("Device-ConnectToDevice", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + deviceSelected);
                 }
@@ -152,24 +159,24 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     }
 
     void showOptions() {
-        //Alert dialog to show the users the list of devices
+        //Displaying list of devices to users.
         AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, R.style.CustomAlertDialogTheme));
         builder.setTitle("Select a Device");
         builder.setCancelable(false);
         builder.setPositiveButton("Refresh", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(DialogInterface dialog, int dev) {
                 discoveryManager.start();
                 builder.show();
             }
         });
 
-        builder.setAdapter(devicesAdapter, (dialog, which) -> {
-            //Handling device selection
-            String selectedDevice = devicesNameList.get(which);
+        builder.setAdapter(devicesAdapter, (dialog, dev) -> {
+
+            //Getting the selected device, updating the array and connecting to it.
+            String selectedDevice = devicesNameList.get(dev);
             selectedDeviceList.add(selectedDevice);
             Log.d("Selected-Device" , "The device selected is" + selectedDevice);
-            //Once a device is selected, the connectToDevice method is called on its name and it handles the rest.
             connectToDevice(selectedDevice);
         });
 
@@ -178,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     }
 
-    //The alert dialog that should pop up prompting the user to accept the connection on their tv.
+    //Pairing Alert dialog prompting the user to accept the connection on their tv.
     void pairingAlertDialog() {
         AlertDialog.Builder pairingAlertDialog = new AlertDialog.Builder(this);
         pairingAlertDialog.setTitle("Pairing with TV");
@@ -190,11 +197,8 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
        pairingAlertDialog.show(); //Does both create and show in one.
     }
 
-    //deviceKey for preventing services posing as devices.
-    String deviceKey;
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
-        //Making it look encryptedy
         deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
         //The methods that just may save us :)
@@ -205,8 +209,10 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
        try {
             if (deviceKeyList.contains(deviceKey)) {
                 Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
-            } else {
-                //If the deviceKey is not in the list, then all this happens.
+
+                //TODO: Need to test out the JSONObject method before implementing it here.
+            }
+            else {
                 devicesList.add(device);
                 deviceKeyList.add(deviceKey);
                 devicesNameList.add(device.getFriendlyName());
@@ -226,7 +232,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     @Override
     public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
-        //Handling for device disconnection is more robust now. Accounting for devices that go off then come back on
         devicesNameList.remove(device.getFriendlyName());
         Log.d("Disconnection", "Device: " + device + " has been removed");
         devicesList.remove(device);
@@ -235,7 +240,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     @Override
     public void onDiscoveryFailed(DiscoveryManager manager, ServiceCommandError error) {
-        // Handle discovery failure
         Log.e("Error", "Hmm, an error has occurred due to: " + error.getMessage());
     }
 }
