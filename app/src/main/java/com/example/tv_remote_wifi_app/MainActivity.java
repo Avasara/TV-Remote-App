@@ -197,7 +197,10 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //Making it look encryptedy
         deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
+        //The methods that just may save us :)
+
         //JSONObject adiutrix = device.toJSONObject();
+        //String germina = device.getConnectedServiceNames();
 
        try {
             if (deviceKeyList.contains(deviceKey)) {
