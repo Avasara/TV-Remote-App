@@ -21,6 +21,8 @@ import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.DeviceService.PairingType;
 import com.connectsdk.service.command.ServiceCommandError;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +36,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     //deviceList array holding deviceKeys to ensure we aren't adding duplicates.
     private ArrayList<ConnectableDevice> devicesList;
-
     private ConnectableDeviceListener deviceListener;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,9 +55,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         DiscoveryManager.init(this);
         discoveryManager = DiscoveryManager.getInstance();
         discoveryManager.setPairingLevel(DiscoveryManager.PairingLevel.ON);
-        discoveryManager.addListener(this);
-        discoveryManager.start();
-
+        discoveryManager.registerDefaultDeviceTypes();
+        discoveryManager.addListener(MainActivity.this);
+        DiscoveryManager.getInstance().start();
 
         showOptions();
         Log.d("Device-Pairing-Level", "The device pairing level is: " + discoveryManager.getPairingLevel());
@@ -66,14 +66,12 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         deviceListener = new ConnectableDeviceListener() {
             @Override
             public void onDeviceReady(ConnectableDevice device) {
-
                 final Button button = findViewById(R.id.home_button);
                 button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         try {
                             Log.d("Home-Clicked", "The button was clicked");
-                            sendHomeCommand(device);
                         }
                         catch (Exception exception) {
                             Log.e("Home-Key-Error", "The key didn't go through");
@@ -89,18 +87,19 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
             @Override
             public void onPairingRequired(ConnectableDevice device, DeviceService service, DeviceService.PairingType pairingType) {
-                Log.d("Device-Listener", "We need to pair with them.");
-                Log.d("2ndScreenAPP", "Connected to " + device.getIpAddress());
+                Log.d("Device-Pairing", "We need to pair with them.");
+                Log.d("Device-Pairing", "Connected to " + device.getIpAddress());
 
                 switch (pairingType) {
-                    case MIXED:
                     case FIRST_SCREEN:
-                        Log.d("2ndScreenAPP", "First Screen");
+                    case MIXED:
+                    case NONE:
+                        Log.d("Device-Pairing", "First Screen");
                         pairingAlertDialog();
                         break;
 
-                    case NONE:
                     default:
+                        Log.d("Device-Pairing", "Man the default? Fuck that.");
                         break;
                 }
             }
@@ -116,12 +115,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             }
         };
 
-
-
-    }
-
-    void sendHomeCommand(ConnectableDevice device) {
-        Log.d("Device-sendHomeCommand", "Device keycontrol is: " + device.getCapabilities());
     }
 
     void connectToDevice(String deviceSelected) {
@@ -139,9 +132,8 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                         public void run() {
                             try {
                                 Log.d("Device-connectToDevice" , "The device is: " + device);
-                                device.setPairingType(PairingType.FIRST_SCREEN);
-                                device.setPairingType(DeviceService.PairingType.FIRST_SCREEN);
                                 device.addListener(deviceListener);
+                                device.setPairingType(PairingType.FIRST_SCREEN);
                                 device.connect();
                             }
                             catch (Exception exception) {
@@ -192,12 +184,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         pairingAlertDialog.setTitle("Pairing with TV");
         pairingAlertDialog.setMessage("Please confirm your selection on your TV");
         pairingAlertDialog.setPositiveButton("Okay", null);
-        pairingAlertDialog.setNegativeButton("Nope", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+
+        //This is lambda. Basically shortens the code? I'll have to learn more about that. It's very neat.
+        pairingAlertDialog.setNegativeButton("Nope", (dialog, which) -> dialog.dismiss());
        pairingAlertDialog.show(); //Does both create and show in one.
     }
 
@@ -208,9 +197,11 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //Making it look encryptedy
         deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
-        try {
+        //JSONObject adiutrix = device.toJSONObject();
+
+       try {
             if (deviceKeyList.contains(deviceKey)) {
-                Log.d("Device-Exists", "A device with key " + deviceKey + " already exists. Adding service to Device");
+                Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
             } else {
                 //If the deviceKey is not in the list, then all this happens.
                 devicesList.add(device);
@@ -227,7 +218,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     @Override
     public void onDeviceUpdated(DiscoveryManager manager, ConnectableDevice device) {
-        Log.d("Updated-Device:", "Device:" + device.getFriendlyName() + " has been updated");
         devicesAdapter.notifyDataSetChanged();
     }
 
