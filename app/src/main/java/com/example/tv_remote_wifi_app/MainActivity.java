@@ -203,14 +203,28 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
         //The methods that just may save us :)
 
-        //JSONObject adiutrix = device.toJSONObject();
+        JSONObject adiutrix = device.toJSONObject();
         //String germina = device.getConnectedServiceNames();
+        Log.d("Device-Adiutrix", "Adiutrix found");
 
        try {
             if (deviceKeyList.contains(deviceKey)) {
                 Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
 
-                //TODO: Need to test out the JSONObject method before implementing it here.
+                //EUREKA. We did it. Man. There has to be a better way to do this for real.
+
+                //Service gets the main object then desc gets the longID object then final gets the description object which we can THEN use to get the uuid.
+                String deviceServices = "services";
+                String longID = "57ab9c40-9a0b-4f73-9dcd-c44d036c70a2";
+                String description = "description";
+                String uuid = "uuid";
+
+                JSONObject servicesAdiutrix = adiutrix.getJSONObject(deviceServices);
+                JSONObject descAdiutrix = servicesAdiutrix.getJSONObject(longID);
+                JSONObject finalAdiutrix = descAdiutrix.getJSONObject(description);
+
+                //With this setup, we can finally get the uuid of a service. With that, we can manually add the services ourselves.
+                Log.d("Device-Adiutrix", "The uuid within services we can reach is: " + finalAdiutrix.get(uuid));
             }
             else {
                 devicesList.add(device);
@@ -221,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             }
         }
         catch (Exception exception) {
-            Log.e("Device-Error", "A error was caught with a device. Error: " + exception.getMessage());
+            Log.e("Device-Error", "An error was caught with a device. Error: " + exception.getMessage());
         }
     }
 
