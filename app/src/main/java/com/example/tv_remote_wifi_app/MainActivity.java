@@ -19,11 +19,11 @@ import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
+import com.connectsdk.service.config.ServiceConfig;
+import com.connectsdk.service.config.ServiceDescription;
 
 import org.json.JSONObject;
-
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DiscoveryManagerListener {
@@ -104,12 +104,12 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                     case FIRST_SCREEN:
                     case MIXED:
                     case NONE:
-                        Log.d("Device-Pairing", "First Screen");
+                        Log.d("Device-Pairing", "First Screen/Mixed/None");
                         pairingAlertDialog();
                         break;
 
                     default:
-                        Log.d("Device-Pairing", "Man the default? Fuck that.");
+                        Log.d("Device-Pairing", "Default pairing option.");
                         break;
                 }
             }
@@ -135,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                     Log.d("Device-ConnectToDevice", "Beginning connection to device: " + device.getFriendlyName());
 
                     //Handler delaying the connection by 15 seconds. Giving ConnectSDK enough time to add in all the services.
+                    //If adding the services myself works better, I might just remove this handler.
                     Handler handler = new Handler();
                     handler.postDelayed(new Runnable() {
                         @Override
@@ -195,37 +196,44 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
         //This is lambda. Basically shortens the code? I'll have to learn more about that. It's very neat.
         pairingAlertDialog.setNegativeButton("Nope", (dialog, which) -> dialog.dismiss());
-       pairingAlertDialog.show(); //Does both create and show in one.
+        pairingAlertDialog.show(); //Does both create and show in one.
     }
 
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
         deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
-        //The methods that saved us :)
-
-        JSONObject adiutrix = device.toJSONObject();
-        Log.d("Device-Adiutrix", "Adiutrix found");
+        //Making the discovered "device" into a JSON Object
+        JSONObject deviceJSONObject = device.toJSONObject();
 
        try {
             if (deviceKeyList.contains(deviceKey)) {
                 Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
 
-                //EUREKA. We did it. Man. There has to be a better way to do this for real.
+                //String to hold the required JSON object name.
+                String servicesString = "services";
 
-                //Service gets the main object then desc gets the longID object then final gets the description object which we can THEN use to get the uuid.
-                String deviceServices = "services";
-                String uuid = "uuid";
+                JSONObject servicesJSONObject = deviceJSONObject.getJSONObject(servicesString);
 
-                JSONObject servicesAdiutrix = adiutrix;
-                JSONObject descAdiutrix = servicesAdiutrix.getJSONObject(deviceServices);
+                //Looping through the servicesJSONObject to find the of the service.
+                for(int i = 0; i<servicesJSONObject.names().length(); i++){
+                    Log.v("Device-Adiutrix", "The service is = " + servicesJSONObject.names().getString(i));
+                    String serviceName = servicesJSONObject.names().getString(i);
 
-                //todo: Well i've found a way i think to loop through the objects in the java array. Now to test it and hope it works.
+                    //todo: So right now this service addition is a massive headache.
+                    //todo: The plan now is to create a new device service, assign all the parameters of the service we found,
+                    //todo: so that's the config and the description we saw earlier in the JSON Object and then use that to create it.
+                    //todo: Once that is done, we will then add that to the device. Simple right?
 
-                Log.d("Device-Structure" , "The device structure is: " + device);
+                    //Service config set to the uuid we uncovered from the JSON object.
+                    ServiceConfig config = new ServiceConfig(serviceName);
 
-                for(int i = 0; i<descAdiutrix.names().length(); i++){
-                    Log.v("Device-Adiutrix", "The device is " + device.getFriendlyName() + ". The service is = " + descAdiutrix.names().getString(i) + ". The value = " + descAdiutrix.get(descAdiutrix.names().getString(i)));
+                    //Service Description. We can pass in the device JSON object as our parameter since the class accepts it
+                    ServiceDescription serviceDescription  = new ServiceDescription(deviceJSONObject);
+
+                    //New device service made using the information we got from the device.
+                    DeviceService service = new DeviceService(serviceDescription, config);
+
                 }
 
             }
