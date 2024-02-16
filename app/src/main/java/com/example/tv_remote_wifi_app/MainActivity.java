@@ -1,27 +1,26 @@
 package com.example.tv_remote_wifi_app;
 
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.DialogInterface;
-import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
-
-import android.view.ContextThemeWrapper;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-
-import com.connectsdk.device.ConnectableDeviceListener;
 import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.discovery.DiscoveryManagerListener;
 import com.connectsdk.device.ConnectableDevice;
+import com.connectsdk.device.ConnectableDeviceListener;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
 import com.connectsdk.service.config.ServiceConfig;
 import com.connectsdk.service.config.ServiceDescription;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+
+import android.view.ContextThemeWrapper;
+import android.widget.ArrayAdapter;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +45,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     private ArrayAdapter<String> devicesAdapter;
     private ConnectableDeviceListener deviceListener;
 
-    //deviceKey for preventing services posing as devices.
-    private String deviceKey;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,55 +70,29 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         showOptions();
 
         deviceListener = new ConnectableDeviceListener() {
-            //The first test button. This is going to be where our home button will be executed.
             @Override
-            public void onDeviceReady(ConnectableDevice device) {
-                final Button button = findViewById(R.id.home_button);
-                button.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        try {
-                            Log.d("Home-Clicked", "The button was clicked");
-                        }
-                        catch (Exception exception) {
-                            Log.e("Home-Key-Error", "The key didn't go through");
-                        }
-                    }
-                });
+            public void onDeviceReady(ConnectableDevice connectableDevice) {
+
             }
 
             @Override
-            public void onDeviceDisconnected(ConnectableDevice device) {
-                Log.d("Device-Listener" , "We disconnected from the device");
+            public void onDeviceDisconnected(ConnectableDevice connectableDevice) {
+
             }
 
             @Override
-            public void onPairingRequired(ConnectableDevice device, DeviceService service, DeviceService.PairingType pairingType) {
-                Log.d("Device-Pairing", "We need to pair with them.");
-                Log.d("Device-Pairing", "Connected to " + device.getIpAddress());
+            public void onPairingRequired(ConnectableDevice connectableDevice, DeviceService deviceService, DeviceService.PairingType pairingType) {
 
-                switch (pairingType) {
-                    case FIRST_SCREEN:
-                    case MIXED:
-                    case NONE:
-                        Log.d("Device-Pairing", "First Screen/Mixed/None");
-                        pairingAlertDialog();
-                        break;
-
-                    default:
-                        Log.d("Device-Pairing", "Default pairing option.");
-                        break;
-                }
             }
 
             @Override
-            public void onCapabilityUpdated(ConnectableDevice device, List<String> added, List<String> removed) {
-                Log.d("Device-Listener", "The device listener detected a capabilities update in: " + device.getFriendlyName());
+            public void onCapabilityUpdated(ConnectableDevice connectableDevice, List<String> list, List<String> list1) {
+                Log.d("Device-Listener", "The device was updated in capabilities");
             }
 
             @Override
-            public void onConnectionFailed(ConnectableDevice device, ServiceCommandError error) {
-                Log.e("Device-Listener", "The connection to the device failed. I'm sorry");
+            public void onConnectionFailed(ConnectableDevice connectableDevice, ServiceCommandError serviceCommandError) {
+
             }
         };
 
@@ -137,17 +108,14 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                     //Handler delaying the connection by 15 seconds. Giving ConnectSDK enough time to add in all the services.
                     //If adding the services myself works better, I might just remove this handler.
                     Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Log.d("Device-connectToDevice" , "The device is: " + device);
-                                device.addListener(deviceListener);
-                                device.connect();
-                            }
-                            catch (Exception exception) {
-                                Log.e("Device-connectToDevice-Error", "The connection failed due to: " + exception.getMessage());
-                            }
+                    handler.postDelayed(() -> {
+                        try {
+                            Log.d("Device-connectToDevice" , "The device is: " + device);
+                            device.addListener(deviceListener);
+                            device.connect();
+                        }
+                        catch (Exception exception) {
+                            Log.e("Device-connectToDevice-Error", "The connection failed due to: " + exception.getMessage());
                         }
                     }, 15000);
                 } else {
@@ -165,12 +133,9 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, R.style.CustomAlertDialogTheme));
         builder.setTitle("Select a Device");
         builder.setCancelable(false);
-        builder.setPositiveButton("Refresh", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int dev) {
-                discoveryManager.start();
-                builder.show();
-            }
+        builder.setPositiveButton("Refresh", (dialog, dev) -> {
+            discoveryManager.start();
+            builder.show();
         });
 
         builder.setAdapter(devicesAdapter, (dialog, dev) -> {
@@ -201,52 +166,69 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     @Override
     public void onDeviceAdded(DiscoveryManager manager, ConnectableDevice device) {
-        deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
+        //deviceKey for preventing services posing as devices.
+        String deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
         //Making the discovered "device" into a JSON Object
         JSONObject deviceJSONObject = device.toJSONObject();
 
-       try {
-            if (deviceKeyList.contains(deviceKey)) {
-                Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
+        Log.d("Device-JsonObject" , "The device object is: " + deviceJSONObject);
 
-                //String to hold the required JSON object name.
-                String servicesString = "services";
+        if (deviceKeyList.contains(deviceKey)) {
+            Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
 
-                JSONObject servicesJSONObject = deviceJSONObject.getJSONObject(servicesString);
+            //String to hold the required JSON object name.
+            String servicesString = "services";
 
-                //Looping through the servicesJSONObject to find the of the service.
-                for(int i = 0; i<servicesJSONObject.names().length(); i++){
-                    Log.v("Device-Adiutrix", "The service is = " + servicesJSONObject.names().getString(i));
-                    String serviceName = servicesJSONObject.names().getString(i);
-
-                    //todo: So right now this service addition is a massive headache.
-                    //todo: The plan now is to create a new device service, assign all the parameters of the service we found,
-                    //todo: so that's the config and the description we saw earlier in the JSON Object and then use that to create it.
-                    //todo: Once that is done, we will then add that to the device. Simple right?
-
-                    //Service config set to the uuid we uncovered from the JSON object.
-                    ServiceConfig config = new ServiceConfig(serviceName);
-
-                    //Service Description. We can pass in the device JSON object as our parameter since the class accepts it
-                    ServiceDescription serviceDescription  = new ServiceDescription(deviceJSONObject);
-
-                    //New device service made using the information we got from the device.
-                    DeviceService service = new DeviceService(serviceDescription, config);
-
-                }
-
+            JSONObject servicesJSONObject = null;
+            try {
+                servicesJSONObject = deviceJSONObject.getJSONObject(servicesString);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
-            else {
-                devicesList.add(device);
-                deviceKeyList.add(deviceKey);
-                devicesNameList.add(device.getFriendlyName());
-                devicesAdapter.notifyDataSetChanged();
-                Log.d("Device-Added", "A new device was added to the list. Device: " + deviceKey);
-            }
+
+            //Looping through the servicesJSONObject to find the of the service.
+           for(int i = 0; i<servicesJSONObject.names().length(); i++){
+               String serviceName = null;
+               try {
+                   serviceName = servicesJSONObject.names().getString(i);
+               } catch (JSONException e) {
+                   throw new RuntimeException(e);
+               }
+
+               Log.d("Device-Service" , "The service is: " + serviceName);
+
+               //todo: So right now this service addition is a massive headache.
+               //todo: The plan now is to create a new device service, assign all the parameters of the service we found,
+               //todo: so that's the config and the description we saw earlier in the JSON Object and then use that to create it.
+               //todo: Once that is done, we will then add that to the device. Simple right?
+
+               //Service config set to the uuid we uncovered from the JSON object.
+               ServiceConfig serviceConfig = new ServiceConfig(serviceName);
+
+               //Service Description. We can pass in the device JSON object as our parameter since the class accepts it
+               ServiceDescription serviceDescription  = new ServiceDescription(deviceJSONObject);
+
+               //New device service made using the service Config and description.
+               DeviceService service = new DeviceService(serviceDescription, serviceConfig);
+
+               Log.d("Device-Service", "The current device service is: " + device.getServices());
+               Log.d("Device-Service", "The new service is: " + service.getServiceName());
+
+               device.addListener(deviceListener);
+               device.addService(service);
+
+               Log.d("Device-Service", "The current services owned by the device is: " + device.getServices());
+
+           }
+
         }
-        catch (Exception exception) {
-            Log.e("Device-Error", "An error was caught with a device. Error: " + exception.getMessage());
+        else {
+           devicesList.add(device);
+           deviceKeyList.add(deviceKey);
+           devicesNameList.add(device.getFriendlyName());
+           devicesAdapter.notifyDataSetChanged();
+           Log.d("Device-Added", "A new device was added to the list. Device: " + deviceKey);
         }
     }
 
