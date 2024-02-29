@@ -10,8 +10,6 @@ import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.ConnectableDeviceListener;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.command.ServiceCommandError;
-import com.connectsdk.service.config.ServiceConfig;
-import com.connectsdk.service.config.ServiceDescription;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,7 +18,6 @@ import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.widget.ArrayAdapter;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,11 +60,13 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         discoveryManager.setPairingLevel(DiscoveryManager.PairingLevel.ON);
         discoveryManager.registerDefaultDeviceTypes();
         discoveryManager.addListener(MainActivity.this);
-        DiscoveryManager.getInstance().start();
+        discoveryManager.start();
 
         Log.d("Device-Pairing-Level", "The device pairing level is: " + discoveryManager.getPairingLevel());
 
         showOptions();
+
+        connectToDevice(selectedDeviceList.get(0));
 
         deviceListener = new ConnectableDeviceListener() {
             @Override
@@ -98,11 +97,11 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     }
 
-    void connectToDevice(String deviceSelected) {
-        //Attempting connection based on the name in the deviceSelected string.
+    void connectToDevice(String selectedDeviceFriendlyName) {
+        //Attempting connection based on the name in the string.
         try {
             for (ConnectableDevice device : devicesList) {
-                if (device.getFriendlyName().equals(deviceSelected)) {
+                if (device.getFriendlyName().equals(selectedDeviceFriendlyName)) {
                     Log.d("Device-ConnectToDevice", "Beginning connection to device: " + device.getFriendlyName());
 
                     //Handler delaying the connection by 15 seconds. Giving ConnectSDK enough time to add in all the services.
@@ -112,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                         try {
                             Log.d("Device-connectToDevice" , "The device is: " + device);
                             device.addListener(deviceListener);
+                            device.setPairingType(null);
                             device.connect();
                         }
                         catch (Exception exception) {
@@ -119,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                         }
                     }, 15000);
                 } else {
-                    Log.d("Device-ConnectToDevice", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + deviceSelected);
+                    Log.d("Device-ConnectToDevice", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + selectedDeviceFriendlyName);
                 }
             }
         }
@@ -138,30 +138,17 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             builder.show();
         });
 
-        builder.setAdapter(devicesAdapter, (dialog, dev) -> {
+        builder.setAdapter(devicesAdapter, (dialog, index) -> {
 
             //Getting the selected device, updating the array and connecting to it.
-            String selectedDevice = devicesNameList.get(dev);
+            String selectedDevice = devicesNameList.get(index);
             selectedDeviceList.add(selectedDevice);
-            Log.d("Selected-Device" , "The device selected is" + selectedDevice);
-            connectToDevice(selectedDevice);
+            Log.d("Selected-Device" , "The device selected is " + selectedDevice);
         });
 
         AlertDialog dialog = builder.create();
         dialog.show();
 
-    }
-
-    //Pairing Alert dialog prompting the user to accept the connection on their tv.
-    void pairingAlertDialog() {
-        AlertDialog.Builder pairingAlertDialog = new AlertDialog.Builder(this);
-        pairingAlertDialog.setTitle("Pairing with TV");
-        pairingAlertDialog.setMessage("Please confirm your selection on your TV");
-        pairingAlertDialog.setPositiveButton("Okay", null);
-
-        //This is lambda. Basically shortens the code? I'll have to learn more about that. It's very neat.
-        pairingAlertDialog.setNegativeButton("Nope", (dialog, which) -> dialog.dismiss());
-        pairingAlertDialog.show(); //Does both create and show in one.
     }
 
     @Override
@@ -176,51 +163,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
         if (deviceKeyList.contains(deviceKey)) {
             Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
-
-            //String to hold the required JSON object name.
-            String servicesString = "services";
-
-            JSONObject servicesJSONObject = null;
-            try {
-                servicesJSONObject = deviceJSONObject.getJSONObject(servicesString);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
-
-            //Looping through the servicesJSONObject to find the of the service.
-           for(int i = 0; i<servicesJSONObject.names().length(); i++){
-               String serviceName = null;
-               try {
-                   serviceName = servicesJSONObject.names().getString(i);
-               } catch (JSONException e) {
-                   throw new RuntimeException(e);
-               }
-
-               Log.d("Device-Service" , "The service is: " + serviceName);
-
-               //todo: So right now this service addition is a massive headache.
-               //todo: The plan now is to create a new device service, assign all the parameters of the service we found,
-               //todo: so that's the config and the description we saw earlier in the JSON Object and then use that to create it.
-               //todo: Once that is done, we will then add that to the device. Simple right?
-
-               //Service config set to the uuid we uncovered from the JSON object.
-               ServiceConfig serviceConfig = new ServiceConfig(serviceName);
-
-               //Service Description. We can pass in the device JSON object as our parameter since the class accepts it
-               ServiceDescription serviceDescription  = new ServiceDescription(deviceJSONObject);
-
-               //New device service made using the service Config and description.
-               DeviceService service = new DeviceService(serviceDescription, serviceConfig);
-
-               Log.d("Device-Service", "The current device service is: " + device.getServices());
-               Log.d("Device-Service", "The new service is: " + service.getServiceName());
-
-               device.addListener(deviceListener);
-               device.addService(service);
-
-               Log.d("Device-Service", "The current services owned by the device is: " + device.getServices());
-
-           }
 
         }
         else {
