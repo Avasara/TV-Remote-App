@@ -66,8 +66,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
         showOptions();
 
-        connectToDevice(selectedDeviceList.get(0));
-
         deviceListener = new ConnectableDeviceListener() {
             @Override
             public void onDeviceReady(ConnectableDevice connectableDevice) {
@@ -144,6 +142,8 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
             String selectedDevice = devicesNameList.get(index);
             selectedDeviceList.add(selectedDevice);
             Log.d("Selected-Device" , "The device selected is " + selectedDevice);
+            discoveryManager.getDeviceByIpAddress();
+            dialog.dismiss();
         });
 
         AlertDialog dialog = builder.create();
