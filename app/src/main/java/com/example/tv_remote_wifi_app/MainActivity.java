@@ -18,7 +18,6 @@ import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.widget.ArrayAdapter;
 
-import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
     public DiscoveryManager discoveryManager;
 
     //Array holding device names that will be displayed to the user.
-    private ArrayList<String> devicesNameList;
+    private ArrayList<String> devicesIPList;
 
     //deviceList array holding deviceKeys to ensure we aren't adding duplicates.
     private ArrayList<ConnectableDevice> devicesList;
@@ -47,12 +46,12 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        devicesNameList = new ArrayList<>();
+        devicesIPList = new ArrayList<>();
         devicesList = new ArrayList<>();
         deviceKeyList = new ArrayList<>();
         selectedDeviceList = new ArrayList<>();
 
-        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.list_item, devicesNameList);
+        devicesAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.list_item, devicesIPList);
 
         //Initializing Discovery Manager and setup for Discovery
         DiscoveryManager.init(this);
@@ -95,15 +94,14 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     }
 
-    void connectToDevice(String selectedDeviceFriendlyName) {
-        //Attempting connection based on the name in the string.
+    void connectToDevice(String selectedDeviceIpAddress) {
         try {
-            for (ConnectableDevice device : devicesList) {
-                if (device.getFriendlyName().equals(selectedDeviceFriendlyName)) {
-                    Log.d("Device-ConnectToDevice", "Beginning connection to device: " + device.getFriendlyName());
+            //Creating a new device and assigning the selected device to it.
+            ConnectableDevice device = discoveryManager.getDeviceByIpAddress(selectedDeviceIpAddress);
+
+            Log.d("Device-ConnectToDevice", "Beginning connection to device: " + device.getFriendlyName());
 
                     //Handler delaying the connection by 15 seconds. Giving ConnectSDK enough time to add in all the services.
-                    //If adding the services myself works better, I might just remove this handler.
                     Handler handler = new Handler();
                     handler.postDelayed(() -> {
                         try {
@@ -116,10 +114,6 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
                             Log.e("Device-connectToDevice-Error", "The connection failed due to: " + exception.getMessage());
                         }
                     }, 15000);
-                } else {
-                    Log.d("Device-ConnectToDevice", "The selected device does not match up. DeviceName = " + device.getFriendlyName() + ". selectedDevice Name = " + selectedDeviceFriendlyName);
-                }
-            }
         }
         catch (Exception exception) {
             Log.e("Device-connectToDevice-Error", "Failed to connect to the selected device");
@@ -139,11 +133,10 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         builder.setAdapter(devicesAdapter, (dialog, index) -> {
 
             //Getting the selected device, updating the array and connecting to it.
-            String selectedDevice = devicesNameList.get(index);
+            String selectedDevice = devicesIPList.get(index);
             selectedDeviceList.add(selectedDevice);
             Log.d("Selected-Device" , "The device selected is " + selectedDevice);
-            discoveryManager.getDeviceByIpAddress();
-            dialog.dismiss();
+            connectToDevice(selectedDevice);
         });
 
         AlertDialog dialog = builder.create();
@@ -156,19 +149,15 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
         //deviceKey for preventing services posing as devices.
         String deviceKey = "://" + device.getFriendlyName() + "/:/" + device.getIpAddress() + "//:";
 
-        //Making the discovered "device" into a JSON Object
-        JSONObject deviceJSONObject = device.toJSONObject();
-
-        Log.d("Device-JsonObject" , "The device object is: " + deviceJSONObject);
-
         if (deviceKeyList.contains(deviceKey)) {
             Log.d("Device-KeyExists", "A device with key " + deviceKey + " already exists. Adding service to Device");
+            //Not sure what to put here to add the service since ConnectSDK is supposed to do that automatically.
 
         }
         else {
            devicesList.add(device);
            deviceKeyList.add(deviceKey);
-           devicesNameList.add(device.getFriendlyName());
+           devicesIPList.add(device.getIpAddress());
            devicesAdapter.notifyDataSetChanged();
            Log.d("Device-Added", "A new device was added to the list. Device: " + deviceKey);
         }
@@ -181,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements DiscoveryManagerL
 
     @Override
     public void onDeviceRemoved(DiscoveryManager manager, ConnectableDevice device) {
-        devicesNameList.remove(device.getFriendlyName());
+        devicesIPList.remove(device.getFriendlyName());
         Log.d("Disconnection", "Device: " + device + " has been removed");
         devicesList.remove(device);
         devicesAdapter.notifyDataSetChanged();
